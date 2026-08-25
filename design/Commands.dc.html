@@ -1,0 +1,199 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap">
+  <style>
+    :root{
+      --bg: oklch(0.12 0.018 255);
+      --bg-panel: oklch(0.155 0.022 255);
+      --bg-panel-2: oklch(0.185 0.025 255);
+      --line: oklch(0.32 0.03 255);
+      --line-dim: oklch(0.24 0.025 255);
+      --text: oklch(0.93 0.01 255);
+      --text-dim: oklch(0.62 0.02 255);
+      --text-faint: oklch(0.42 0.02 255);
+      --amber: oklch(0.78 0.16 70);
+      --amber-dim: oklch(0.55 0.13 70);
+      --ok: oklch(0.72 0.15 150);
+      --font-display: 'Space Grotesk', system-ui, sans-serif;
+      --font-mono: 'JetBrains Mono', ui-monospace, 'SF Mono', monospace;
+    }
+    body{ margin:0; background:var(--bg); color:var(--text); font-family:var(--font-display); }
+    a{ color:var(--amber); } a:hover{ color:var(--amber-dim); }
+    .grid-tex{
+      position:absolute; inset:0; pointer-events:none; opacity:0.35;
+      background-image:
+        linear-gradient(var(--line-dim) 1px, transparent 1px),
+        linear-gradient(90deg, var(--line-dim) 1px, transparent 1px);
+      background-size: 40px 40px;
+      mask-image: radial-gradient(ellipse 90% 70% at 50% 30%, black 0%, transparent 80%);
+    }
+    .cmd-card{ transition: border-color 0.15s, background 0.15s; }
+  </style>
+</helmet>
+
+<div style="width:1600px; height:980px; background:var(--bg); position:relative; overflow:hidden; box-sizing:border-box; display:flex;">
+
+  <!-- Persistent nav rail -->
+  <div style="width:76px; flex-shrink:0; border-right:1px solid var(--line-dim); display:flex; flex-direction:column; align-items:center; padding:22px 0; gap:8px; box-sizing:border-box; background:oklch(0.105 0.016 255);">
+    <svg width="28" height="28" viewBox="0 0 30 30" fill="none" style="margin-bottom:18px;">
+      <circle cx="15" cy="15" r="13" stroke="{{accent}}" stroke-width="1.4" opacity="0.55"/>
+      <circle cx="15" cy="15" r="8.5" stroke="{{accent}}" stroke-width="1.4"/>
+      <circle cx="15" cy="15" r="2.6" fill="{{accent}}"/>
+    </svg>
+    <div style="width:48px; height:48px; border-radius:8px; display:flex; align-items:center; justify-content:center;">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--text-faint)" stroke-width="1.8"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="3"/></svg>
+    </div>
+    <div style="width:48px; height:48px; border-radius:8px; background:oklch(0.22 0.045 70 / 0.4); border:1px solid {{accent}}; display:flex; align-items:center; justify-content:center;">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="{{accent}}" stroke-width="1.8"><rect x="3" y="4" width="18" height="16" rx="1.5"/><path d="M7 9l3 3-3 3M12 15h5"/></svg>
+    </div>
+    <div style="width:48px; height:48px; border-radius:8px; display:flex; align-items:center; justify-content:center;">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--text-faint)" stroke-width="1.8"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M4.2 4.2l2.1 2.1M17.7 17.7l2.1 2.1M2 12h3M19 12h3M4.2 19.8l2.1-2.1M17.7 6.3l2.1-2.1"/></svg>
+    </div>
+  </div>
+
+  <div style="flex:1; min-width:0; position:relative;">
+  <div class="grid-tex"></div>
+
+  <div style="position:relative; display:flex; align-items:center; justify-content:space-between; padding:22px 32px; border-bottom:1px solid var(--line-dim); box-sizing:border-box;">
+    <div style="display:flex; align-items:center; gap:14px;">
+      <div style="font-family:var(--font-display); font-weight:700; font-size:19px; letter-spacing:0.1em; color:var(--text);">КОМАНДЫ</div>
+    </div>
+    <div style="font-family:var(--font-mono); font-size:11px; letter-spacing:0.1em; color:var(--text-faint);">DESKTOP COMMANDER · WHITELIST-ONLY</div>
+  </div>
+
+  <div style="position:relative; padding:28px 32px; display:grid; grid-template-columns: 1fr 1fr; gap:24px; box-sizing:border-box; height:calc(980px - 73px);">
+
+    <!-- Left: quick apps + system -->
+    <div style="display:flex; flex-direction:column; gap:22px; min-height:0;">
+
+      <div>
+        <div style="font-family:var(--font-mono); font-size:11px; letter-spacing:0.14em; color:var(--text-faint); margin-bottom:12px;">ОТКРЫТЬ ПРИЛОЖЕНИЕ</div>
+        <div style="display:grid; grid-template-columns:repeat(3, 1fr); gap:12px;">
+          <sc-for list="{{apps}}" as="app" hint-placeholder-count="6">
+            <div class="cmd-card" style="border:1px solid var(--line-dim); border-radius:6px; background:var(--bg-panel); padding:16px 14px; display:flex; flex-direction:column; gap:10px; cursor:pointer;">
+              <div style="width:30px; height:30px; border-radius:5px; background:var(--bg-panel-2); display:flex; align-items:center; justify-content:center; color:{{accent}};" data-icon="{{app.icon}}">
+                <sc-if value="{{app.iconChrome}}" hint-placeholder-val="{{false}}">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="3"/><path d="M12 3v6M6.3 16.5l5.2-3M17.7 16.5l-5.2-3"/></svg>
+                </sc-if>
+                <sc-if value="{{app.iconNotepad}}" hint-placeholder-val="{{false}}">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M6 3h9l5 5v13H6z"/><path d="M15 3v5h5"/><path d="M9 13h6M9 17h6"/></svg>
+                </sc-if>
+                <sc-if value="{{app.iconCalc}}" hint-placeholder-val="{{false}}">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="5" y="3" width="14" height="18" rx="1.5"/><path d="M8 8h8M8 12h1M12 12h1M16 12h1M8 16h1M12 16h1M16 16h1"/></svg>
+                </sc-if>
+                <sc-if value="{{app.iconCode}}" hint-placeholder-val="{{false}}">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M9 8l-4 4 4 4M15 8l4 4-4 4"/></svg>
+                </sc-if>
+                <sc-if value="{{app.iconTerm}}" hint-placeholder-val="{{false}}">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="3" y="4" width="18" height="16" rx="1.5"/><path d="M7 9l3 3-3 3M12 15h5"/></svg>
+                </sc-if>
+                <sc-if value="{{app.iconFolder}}" hint-placeholder-val="{{false}}">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M3 6.5A1.5 1.5 0 0 1 4.5 5H9l2 2h8.5A1.5 1.5 0 0 1 21 8.5v10A1.5 1.5 0 0 1 19.5 20h-15A1.5 1.5 0 0 1 3 18.5z"/></svg>
+                </sc-if>
+              </div>
+              <div style="font-family:var(--font-display); font-size:13px; font-weight:600; color:var(--text);">{{app.name}}</div>
+              <div style="font-family:var(--font-mono); font-size:10px; color:var(--text-faint);">{{app.cmd}}</div>
+            </div>
+          </sc-for>
+        </div>
+      </div>
+
+      <div>
+        <div style="font-family:var(--font-mono); font-size:11px; letter-spacing:0.14em; color:var(--text-faint); margin-bottom:12px;">СИСТЕМА</div>
+        <div style="display:flex; flex-direction:column; border:1px solid var(--line-dim); border-radius:6px; background:var(--bg-panel); overflow:hidden;">
+          <sc-for list="{{sysActions}}" as="a" hint-placeholder-count="4">
+            <div class="cmd-card" style="display:flex; align-items:center; justify-content:space-between; padding:13px 16px; border-bottom:1px solid var(--line-dim); cursor:pointer;">
+              <div style="display:flex; align-items:center; gap:12px;">
+                <span style="width:6px; height:6px; border-radius:50%; background:{{a.dot}};"></span>
+                <div style="font-family:var(--font-display); font-size:13px; color:var(--text);">{{a.name}}</div>
+              </div>
+              <div style="font-family:var(--font-mono); font-size:11px; color:var(--text-faint);">{{a.hint}}</div>
+            </div>
+          </sc-for>
+        </div>
+      </div>
+    </div>
+
+    <!-- Right: file system browser mock -->
+    <div style="display:flex; flex-direction:column; min-height:0;">
+      <div style="font-family:var(--font-mono); font-size:11px; letter-spacing:0.14em; color:var(--text-faint); margin-bottom:12px;">ФАЙЛОВАЯ СИСТЕМА · ДОСТУП ПО БЕЛОМУ СПИСКУ</div>
+      <div style="flex:1; border:1px solid var(--line-dim); border-radius:6px; background:var(--bg-panel); display:flex; flex-direction:column; overflow:hidden;">
+        <div style="display:flex; align-items:center; gap:8px; padding:12px 16px; border-bottom:1px solid var(--line-dim); font-family:var(--font-mono); font-size:12px; color:var(--text-dim);">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 6.5A1.5 1.5 0 0 1 4.5 5H9l2 2h8.5A1.5 1.5 0 0 1 21 8.5v10A1.5 1.5 0 0 1 19.5 20h-15A1.5 1.5 0 0 1 3 18.5z"/></svg>
+          D:\claude\gogi
+        </div>
+        <div style="flex:1; overflow:auto; padding:10px 6px;">
+          <sc-for list="{{files}}" as="f" hint-placeholder-count="8">
+            <div style="display:flex; align-items:center; justify-content:space-between; padding:8px 12px; border-radius:4px; margin:0 6px;">
+              <div style="display:flex; align-items:center; gap:10px; padding-left:{{f.indent}};">
+                <sc-if value="{{f.isDir}}" hint-placeholder-val="{{false}}">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="{{accent}}" stroke-width="1.8"><path d="M3 6.5A1.5 1.5 0 0 1 4.5 5H9l2 2h8.5A1.5 1.5 0 0 1 21 8.5v10A1.5 1.5 0 0 1 19.5 20h-15A1.5 1.5 0 0 1 3 18.5z"/></svg>
+                </sc-if>
+                <sc-if value="{{f.isFile}}" hint-placeholder-val="{{true}}">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--text-faint)" stroke-width="1.8"><path d="M6 3h9l5 5v13H6z"/><path d="M15 3v5h5"/></svg>
+                </sc-if>
+                <div style="font-family:var(--font-mono); font-size:12.5px; color:{{f.color}};">{{f.name}}</div>
+              </div>
+              <div style="font-family:var(--font-mono); font-size:11px; color:var(--text-faint);">{{f.meta}}</div>
+            </div>
+          </sc-for>
+        </div>
+        <div style="border-top:1px solid var(--line-dim); padding:12px 16px; display:flex; align-items:center; gap:10px;">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="{{accent}}" stroke-width="1.8"><path d="M9 8l-4 4 4 4M15 8l4 4-4 4"/></svg>
+          <div style="font-family:var(--font-mono); font-size:12px; color:var(--text-faint); flex:1;">«Гоги, открой main.py»</div>
+          <div style="font-family:var(--font-mono); font-size:10px; letter-spacing:0.08em; color:var(--ok); border:1px solid var(--ok); border-radius:3px; padding:3px 8px;">РАЗРЕШЕНО</div>
+        </div>
+      </div>
+    </div>
+  </div>
+  </div>
+</div>
+
+</x-dc>
+<script data-dc-script data-props='{
+  "accent": {"editor": "color", "default": "#e0a94a", "section": "Тема"}
+}'>
+class Component extends DCLogic {
+  renderVals() {
+    const accent = this.props.accent ?? '#e0a94a';
+
+    const apps = [
+      { name: 'Chrome', cmd: 'open_app: chrome', iconChrome: true },
+      { name: 'Блокнот', cmd: 'open_app: notepad', iconNotepad: true },
+      { name: 'Калькулятор', cmd: 'open_app: calculator', iconCalc: true },
+      { name: 'VS Code', cmd: 'open_app: vscode', iconCode: true },
+      { name: 'Терминал', cmd: 'open_app: powershell', iconTerm: true },
+      { name: 'Проводник', cmd: 'open_app: explorer', iconFolder: true },
+    ];
+
+    const sysActions = [
+      { name: 'Диспетчер задач', hint: 'taskmgr.exe', dot: 'var(--ok)' },
+      { name: 'Настройки Windows', hint: 'ms-settings:', dot: 'var(--ok)' },
+      { name: 'Заблокировать экран', hint: 'подтверждение', dot: 'var(--amber-dim)' },
+      { name: 'Спящий режим', hint: 'подтверждение', dot: 'var(--amber-dim)' },
+    ];
+
+    const files = [
+      { name: 'main.py', isFile: true, meta: '2.1 КБ', color: 'var(--text)', indent: '0px' },
+      { name: 'tts_engine.py', isFile: true, meta: '3.4 КБ', color: 'var(--text)', indent: '0px' },
+      { name: 'stt_engine.py', isFile: true, meta: '1.0 КБ', color: 'var(--text)', indent: '0px' },
+      { name: 'tools.py', isFile: true, meta: '1.8 КБ', color: 'var(--text)', indent: '0px' },
+      { name: 'voices', isDir: true, meta: '4 файла', color: accent, indent: '0px' },
+      { name: 'gogi_voice.wav', isFile: true, meta: '450 КБ', color: 'var(--text-dim)', indent: '20px' },
+      { name: 'requirements.txt', isFile: true, meta: '0.3 КБ', color: 'var(--text)', indent: '0px' },
+      { name: 'README.md', isFile: true, meta: '3.9 КБ', color: 'var(--text)', indent: '0px' },
+    ];
+
+    return { accent, apps, sysActions, files };
+  }
+}
+</script>
+</body>
+</html>
