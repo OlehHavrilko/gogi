@@ -18,12 +18,32 @@ APPS = {
     "settings": "ms-settings:",
 }
 
+# Русские алиасы -> канонический ключ в APPS.
+# Модель иногда называет приложение по-русски, несмотря на enum с английскими ключами.
+ALIASES = {
+    "хром": "chrome",
+    "браузер": "browser",
+    "блокнот": "notepad",
+    "калькулятор": "calculator",
+    "проводник": "explorer",
+    "командная строка": "cmd",
+    "терминал": "powershell",
+    "телеграм": "telegram",
+    "телеграмм": "telegram",
+    "диспетчер задач": "task_manager",
+    "настройки": "settings",
+}
+
 TOOL_SCHEMA = [
     {
         "type": "function",
         "function": {
             "name": "open_app",
-            "description": "Открыть приложение на компьютере пользователя по имени.",
+            "description": (
+                "Открыть приложение на компьютере пользователя по имени. "
+                "Всегда используй значение строго из enum (английские ключи), "
+                "даже если пользователь назвал приложение по-русски."
+            ),
             "parameters": {
                 "type": "object",
                 "properties": {
@@ -42,6 +62,7 @@ TOOL_SCHEMA = [
 
 def open_app(app: str) -> str:
     app = app.lower().strip()
+    app = ALIASES.get(app, app)
     target = APPS.get(app)
     if not target:
         return f"Приложение '{app}' не найдено в белом списке."
