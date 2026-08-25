@@ -5,7 +5,7 @@ from tools import TOOL_SCHEMA, execute_tool_call
 
 MODEL = "gpt-oss:20b"
 SYSTEM_PROMPT = (
-    "Ты — голосовой ассистент по имени Домовой. Отвечай на русском языке, "
+    "Ты — голосовой ассистент по имени Гоги. Отвечай на русском языке, "
     "кратко и естественно, как в живом разговоре — без списков и markdown-разметки, "
     "это будет озвучено вслух. Если пользователь просит открыть приложение, "
     "используй инструмент open_app."
@@ -47,7 +47,7 @@ speaker = StreamingSpeaker(tts)
 messages = [{"role": "system", "content": SYSTEM_PROMPT}]
 messages.append({"role": "user", "content": "Открой, пожалуйста, калькулятор."})
 
-print("Домовой: ", end="", flush=True)
+print("Гоги: ", end="", flush=True)
 run_turn(messages, speaker)
 tts.wait_until_done()
 print("\n=== Готово ===")

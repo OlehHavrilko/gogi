@@ -1,4 +1,4 @@
-"""Домовой: локальный голосовой ассистент.
+"""Гоги: локальный голосовой ассистент.
 STT (faster-whisper) -> LLM (gpt-oss:20b через Ollama, streaming + tool calling)
 -> TTS (F5-TTS-Russian, GPU, потоково по предложениям)."""
 
@@ -15,7 +15,7 @@ from tools import TOOL_SCHEMA, execute_tool_call
 MODEL = "gpt-oss:20b"
 
 SYSTEM_PROMPT = (
-    "Ты — голосовой ассистент по имени Домовой. Отвечай на русском языке, "
+    "Ты — голосовой ассистент по имени Гоги. Отвечай на русском языке, "
     "кратко и естественно, как в живом разговоре — без списков и markdown-разметки, "
     "это будет озвучено вслух. Если пользователь просит открыть приложение, "
     "используй инструмент open_app."
@@ -65,7 +65,7 @@ def main():
 
     messages = [{"role": "system", "content": SYSTEM_PROMPT}]
 
-    print("\n=== Домовой готов. Ctrl+C для выхода. ===")
+    print("\n=== Гоги готов. Ctrl+C для выхода. ===")
     try:
         while True:
             audio = stt.record_until_enter()
@@ -75,7 +75,7 @@ def main():
                 continue
             print(f"Вы: {text}")
             messages.append({"role": "user", "content": text})
-            print("Домовой: ", end="", flush=True)
+            print("Гоги: ", end="", flush=True)
             run_turn(messages, speaker)
             tts.wait_until_done()
     except KeyboardInterrupt:
