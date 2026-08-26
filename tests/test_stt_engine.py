@@ -24,3 +24,32 @@ def test_transcribe_joins_segments(mocker):
     result = engine.transcribe(np.ones(1600, dtype=np.float32))
     assert result == "привет мир"
     mock_model.transcribe.assert_called_once()
+
+
+def test_stop_recording_without_start_returns_empty_array():
+    engine = stt_engine.STTEngine.__new__(stt_engine.STTEngine)
+    engine._stream = None
+    result = engine.stop_recording()
+    assert result.size == 0
+
+
+def test_start_stop_recording_concatenates_frames(mocker):
+    fake_stream = mocker.Mock()
+    mocker.patch.object(stt_engine.sd, "InputStream", return_value=fake_stream)
+
+    engine = stt_engine.STTEngine.__new__(stt_engine.STTEngine)
+    engine.start_recording()
+
+    # имитируем то, что делает callback InputStream во время записи
+    callback = stt_engine.sd.InputStream.call_args.kwargs["callback"]
+    callback(np.ones((10, 1), dtype=np.float32), 10, None, None)
+    callback(np.zeros((5, 1), dtype=np.float32), 5, None, None)
+
+    fake_stream.start.assert_called_once()
+
+    audio = engine.stop_recording()
+
+    assert audio.shape == (15,)
+    fake_stream.stop.assert_called_once()
+    fake_stream.close.assert_called_once()
+    assert engine._stream is None

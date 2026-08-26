@@ -1,0 +1,454 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>Гоги</title>
+<style>
+  :root{
+    --bg: #17191e;
+    --bg-panel: #1d2027;
+    --bg-panel-2: #23262f;
+    --line: #3a3f4b;
+    --line-dim: #2a2d36;
+    --text: #ecebe8;
+    --text-dim: #9a9ea8;
+    --text-faint: #656b78;
+    --amber: #e0a94a;
+    --amber-dim: #a97e35;
+    --ok: #6fbf8b;
+    --danger: #d9765a;
+    --font-display: 'Segoe UI', system-ui, sans-serif;
+    --font-mono: Consolas, 'Cascadia Mono', ui-monospace, monospace;
+  }
+  *{ box-sizing: border-box; }
+  html, body{ margin:0; height:100%; background:var(--bg); color:var(--text); font-family:var(--font-display); overflow:hidden; }
+  button{ font-family:inherit; cursor:pointer; }
+
+  #app{ display:flex; height:100vh; }
+
+  /* --- nav rail --- */
+  #rail{ width:72px; flex-shrink:0; background:#121317; border-right:1px solid var(--line-dim);
+    display:flex; flex-direction:column; align-items:center; padding:20px 0; gap:10px; }
+  #rail .logo{ margin-bottom:14px; }
+  .rail-btn{ width:46px; height:46px; border-radius:8px; border:1px solid transparent; background:none;
+    color:var(--text-faint); display:flex; align-items:center; justify-content:center; }
+  .rail-btn:hover{ color:var(--text-dim); }
+  .rail-btn.active{ background:rgba(224,169,74,0.14); border-color:var(--amber-dim); color:var(--amber); }
+
+  /* --- content --- */
+  #content{ flex:1; min-width:0; display:flex; flex-direction:column; }
+  .topbar{ display:flex; align-items:center; justify-content:space-between; padding:18px 28px;
+    border-bottom:1px solid var(--line-dim); flex-shrink:0; }
+  .topbar h1{ font-size:16px; letter-spacing:0.1em; font-weight:700; margin:0; }
+  .status-line{ font-family:var(--font-mono); font-size:11px; color:var(--text-faint); letter-spacing:0.04em; }
+  .status-line b{ color:var(--text-dim); font-weight:600; }
+
+  .screen{ display:none; flex:1; min-height:0; padding:24px 28px; overflow:auto; }
+  .screen.active{ display:flex; flex-direction:column; }
+
+  /* --- Main screen --- */
+  #screen-main{ align-items:center; justify-content:center; gap:22px; }
+  #orb{ width:150px; height:150px; border-radius:50%; border:2px solid var(--amber-dim);
+    background: radial-gradient(circle at 35% 30%, rgba(224,169,74,0.35), rgba(224,169,74,0.05) 70%);
+    display:flex; align-items:center; justify-content:center; cursor:pointer; transition: box-shadow .2s, border-color .2s; }
+  #orb svg{ width:46px; height:46px; stroke:var(--amber); }
+  #orb.recording{ border-color:var(--danger); box-shadow: 0 0 0 8px rgba(217,118,90,0.12), 0 0 40px rgba(217,118,90,0.25); animation: pulse 1.4s ease-in-out infinite; }
+  #orb.speaking{ border-color:var(--ok); box-shadow: 0 0 0 8px rgba(111,191,139,0.12), 0 0 40px rgba(111,191,139,0.25); }
+  #orb.busy{ opacity:0.5; cursor:not-allowed; }
+  @keyframes pulse{ 0%,100%{ transform:scale(1); } 50%{ transform:scale(1.05); } }
+  #orb-hint{ font-family:var(--font-mono); font-size:12px; color:var(--text-faint); }
+
+  #transcript{ width:100%; max-width:720px; flex:1; min-height:0; overflow-y:auto; display:flex; flex-direction:column; gap:10px; padding:4px 2px; }
+  .msg{ max-width:80%; padding:10px 14px; border-radius:8px; font-size:13.5px; line-height:1.5; }
+  .msg.user{ align-self:flex-end; background:var(--bg-panel-2); border:1px solid var(--line-dim); }
+  .msg.assistant{ align-self:flex-start; background:rgba(224,169,74,0.08); border:1px solid var(--amber-dim); }
+  .msg .role{ font-family:var(--font-mono); font-size:10px; letter-spacing:0.08em; color:var(--text-faint); margin-bottom:4px; }
+
+  #text-fallback{ width:100%; max-width:720px; display:flex; gap:8px; }
+  #text-fallback input{ flex:1; background:var(--bg-panel); border:1px solid var(--line-dim); border-radius:6px;
+    color:var(--text); padding:10px 12px; font-family:var(--font-display); font-size:13px; }
+  #text-fallback button{ background:var(--bg-panel-2); border:1px solid var(--line-dim); border-radius:6px;
+    color:var(--text-dim); padding:0 16px; font-size:13px; }
+  #text-fallback button:hover{ border-color:var(--amber-dim); color:var(--amber); }
+
+  /* --- Commands screen --- */
+  .section-label{ font-family:var(--font-mono); font-size:11px; letter-spacing:0.12em; color:var(--text-faint); margin-bottom:10px; }
+  #screen-commands.active{ display:grid; grid-template-columns: 1fr 1fr; gap:24px; align-content:start; }
+  #app-grid{ display:grid; grid-template-columns:repeat(3, 1fr); gap:10px; }
+  .app-card{ border:1px solid var(--line-dim); border-radius:6px; background:var(--bg-panel); padding:14px; text-align:left;
+    color:var(--text); font-size:12.5px; }
+  .app-card:hover{ border-color:var(--amber-dim); }
+
+  #sys-actions{ display:flex; flex-direction:column; border:1px solid var(--line-dim); border-radius:6px; overflow:hidden; margin-top:8px; }
+  .sys-action{ display:flex; align-items:center; justify-content:space-between; padding:11px 14px; background:var(--bg-panel);
+    border-bottom:1px solid var(--line-dim); color:var(--text); font-size:13px; }
+  .sys-action:last-child{ border-bottom:none; }
+  .sys-action button{ background:none; border:1px solid var(--line-dim); border-radius:4px; color:var(--text-dim); font-size:11px; padding:4px 10px; }
+  .sys-action button:hover{ border-color:var(--amber-dim); color:var(--amber); }
+  .sys-action button.danger:hover{ border-color:var(--danger); color:var(--danger); }
+
+  #file-browser{ border:1px solid var(--line-dim); border-radius:6px; background:var(--bg-panel); display:flex; flex-direction:column; min-height:0; height: 100%; }
+  #file-path{ padding:10px 14px; border-bottom:1px solid var(--line-dim); font-family:var(--font-mono); font-size:11.5px; color:var(--text-dim); }
+  #file-list{ flex:1; overflow:auto; padding:6px; }
+  .file-row{ display:flex; align-items:center; justify-content:space-between; padding:7px 10px; border-radius:4px; font-family:var(--font-mono); font-size:12px; }
+  .file-row:hover{ background:var(--bg-panel-2); }
+  .file-row .name{ cursor:pointer; }
+  .file-row.dir .name{ color:var(--amber); }
+  .file-row .meta{ color:var(--text-faint); }
+
+  /* --- Settings screen --- */
+  #screen-settings.active{ display:grid; grid-template-columns:1fr 1fr; gap:28px; align-content:start; }
+  .voice-card, .model-card{ border:1px solid var(--line-dim); border-radius:8px; background:var(--bg-panel); padding:14px 16px;
+    display:flex; align-items:center; gap:14px; margin-bottom:10px; }
+  .voice-card.active, .model-card.active{ border-color:var(--amber-dim); background:rgba(224,169,74,0.08); }
+  .voice-avatar{ width:36px; height:36px; border-radius:50%; background:radial-gradient(circle at 35% 30%, var(--amber), var(--amber-dim));
+    display:flex; align-items:center; justify-content:center; font-weight:700; color:#241a08; flex-shrink:0; }
+  .card-body{ flex:1; display:flex; flex-direction:column; gap:2px; }
+  .card-name{ font-size:13.5px; font-weight:600; }
+  .card-desc{ font-family:var(--font-mono); font-size:11px; color:var(--text-faint); }
+  .badge{ font-family:var(--font-mono); font-size:9px; letter-spacing:0.08em; color:var(--ok); border:1px solid var(--ok); border-radius:3px; padding:2px 6px; }
+  .info-box{ border:1px solid var(--line-dim); border-radius:8px; background:var(--bg-panel); padding:14px 16px; display:flex; flex-direction:column; gap:10px; margin-top:6px; }
+  .info-row{ display:flex; justify-content:space-between; font-size:12.5px; }
+  .info-row .k{ color:var(--text-dim); }
+  .info-row .v{ font-family:var(--font-mono); color:var(--text); }
+
+  /* --- loading overlay --- */
+  #loading{ position:fixed; inset:0; background:var(--bg); display:flex; flex-direction:column; align-items:center; justify-content:center; gap:16px; z-index:50; }
+  #loading .spinner{ width:36px; height:36px; border-radius:50%; border:3px solid var(--line-dim); border-top-color:var(--amber); animation: spin 0.9s linear infinite; }
+  @keyframes spin{ to{ transform:rotate(360deg); } }
+  #loading p{ font-family:var(--font-mono); font-size:12px; color:var(--text-faint); }
+  #loading.error p{ color:var(--danger); max-width:480px; text-align:center; }
+</style>
+</head>
+<body>
+
+<div id="loading">
+  <div class="spinner"></div>
+  <p id="loading-text">Загружаю STT и TTS (может занять до минуты)...</p>
+</div>
+
+<div id="app">
+  <div id="rail">
+    <svg class="logo" width="26" height="26" viewBox="0 0 30 30" fill="none">
+      <circle cx="15" cy="15" r="13" stroke="#e0a94a" stroke-width="1.4" opacity="0.55"/>
+      <circle cx="15" cy="15" r="8.5" stroke="#e0a94a" stroke-width="1.4"/>
+      <circle cx="15" cy="15" r="2.6" fill="#e0a94a"/>
+    </svg>
+    <button class="rail-btn active" data-tab="main" title="Главный экран">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="3"/></svg>
+    </button>
+    <button class="rail-btn" data-tab="commands" title="Команды">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="4" width="18" height="16" rx="1.5"/><path d="M7 9l3 3-3 3M12 15h5"/></svg>
+    </button>
+    <button class="rail-btn" data-tab="settings" title="Настройки">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M4.2 4.2l2.1 2.1M17.7 17.7l2.1 2.1M2 12h3M19 12h3M4.2 19.8l2.1-2.1M17.7 6.3l2.1-2.1"/></svg>
+    </button>
+  </div>
+
+  <div id="content">
+    <div class="topbar">
+      <h1 id="screen-title">ГОГИ</h1>
+      <div class="status-line" id="status-line">—</div>
+    </div>
+
+    <!-- Main -->
+    <div class="screen active" id="screen-main">
+      <div id="orb">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M12 2a3 3 0 0 1 3 3v6a3 3 0 0 1-6 0V5a3 3 0 0 1 3-3z"/><path d="M19 11a7 7 0 0 1-14 0M12 18v4M8 22h8"/></svg>
+      </div>
+      <div id="orb-hint">Нажми на орб, чтобы начать говорить</div>
+      <div id="transcript"></div>
+      <div id="text-fallback">
+        <input type="text" id="text-input" placeholder="Или напиши сообщение текстом...">
+        <button id="text-send">Отправить</button>
+      </div>
+    </div>
+
+    <!-- Commands -->
+    <div class="screen" id="screen-commands">
+      <div>
+        <div class="section-label">ОТКРЫТЬ ПРИЛОЖЕНИЕ</div>
+        <div id="app-grid"></div>
+
+        <div class="section-label" style="margin-top:22px;">СИСТЕМА</div>
+        <div id="sys-actions"></div>
+      </div>
+      <div style="display:flex; flex-direction:column; min-height:0;">
+        <div class="section-label">ФАЙЛОВАЯ СИСТЕМА · ДОСТУП ПО БЕЛОМУ СПИСКУ</div>
+        <div id="file-browser">
+          <div id="file-path">/</div>
+          <div id="file-list"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Settings -->
+    <div class="screen" id="screen-settings">
+      <div>
+        <div class="section-label">ГОЛОСОВЫЕ ПРОФИЛИ</div>
+        <div id="voice-list"></div>
+      </div>
+      <div>
+        <div class="section-label">МОДЕЛЬ LLM</div>
+        <div id="model-list"></div>
+        <div class="section-label" style="margin-top:20px;">STT / АКТИВАЦИЯ</div>
+        <div class="info-box">
+          <div class="info-row"><span class="k">Whisper (STT)</span><span class="v">medium · CPU · int8</span></div>
+          <div class="info-row"><span class="k">Язык распознавания</span><span class="v">RU</span></div>
+          <div class="info-row"><span class="k">Активация</span><span class="v">Клик по орбу</span></div>
+        </div>
+        <div class="section-label" style="margin-top:20px;">БЕЛЫЙ СПИСОК ПРИЛОЖЕНИЙ</div>
+        <div class="info-box"><div class="info-row v" id="settings-app-list" style="font-family:var(--font-mono); font-size:12px;">—</div></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+const state = { voices: {}, models: [], currentVoice: null, currentModel: null, recording: false, busy: false, filePath: "" };
+
+function $(sel){ return document.querySelector(sel); }
+function el(tag, cls, html){ const e = document.createElement(tag); if(cls) e.className = cls; if(html !== undefined) e.innerHTML = html; return e; }
+
+// --- навигация между экранами -------------------------------------------
+document.querySelectorAll('.rail-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.rail-btn').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+    btn.classList.add('active');
+    const tab = btn.dataset.tab;
+    $('#screen-' + tab).classList.add('active');
+    $('#screen-title').textContent = { main: 'ГОГИ', commands: 'КОМАНДЫ', settings: 'НАСТРОЙКИ' }[tab];
+    if (tab === 'commands') refreshFileBrowser();
+  });
+});
+
+// --- транскрипт -----------------------------------------------------------
+function appendMessage(role, text) {
+  const msg = el('div', 'msg ' + role);
+  msg.appendChild(el('div', 'role', role === 'user' ? 'ВЫ' : 'ГОГИ'));
+  const body = el('div');
+  body.textContent = text;
+  msg.appendChild(body);
+  $('#transcript').appendChild(msg);
+  $('#transcript').scrollTop = $('#transcript').scrollHeight;
+}
+
+// --- орб / запись -----------------------------------------------------------
+function setOrbState(cls) {
+  const orb = $('#orb');
+  orb.classList.remove('recording', 'speaking', 'busy');
+  if (cls) orb.classList.add(cls);
+}
+
+$('#orb').addEventListener('click', async () => {
+  if (state.busy) return;
+  if (!state.recording) {
+    state.recording = true;
+    setOrbState('recording');
+    $('#orb-hint').textContent = 'Слушаю... нажми ещё раз, чтобы остановить';
+    await window.pywebview.api.start_recording();
+  } else {
+    state.recording = false;
+    state.busy = true;
+    setOrbState('busy');
+    $('#orb-hint').textContent = 'Распознаю и думаю...';
+    try {
+      const { user_text, reply } = await window.pywebview.api.stop_recording_and_respond();
+      if (user_text) {
+        appendMessage('user', user_text);
+        appendMessage('assistant', reply || '(нет ответа)');
+      } else {
+        $('#orb-hint').textContent = '(не расслышал) нажми на орб, чтобы говорить';
+      }
+    } finally {
+      state.busy = false;
+      setOrbState('');
+      $('#orb-hint').textContent = 'Нажми на орб, чтобы начать говорить';
+    }
+  }
+});
+
+$('#text-send').addEventListener('click', sendTextFallback);
+$('#text-input').addEventListener('keydown', (e) => { if (e.key === 'Enter') sendTextFallback(); });
+
+async function sendTextFallback() {
+  const input = $('#text-input');
+  const text = input.value.trim();
+  if (!text || state.busy) return;
+  input.value = '';
+  state.busy = true;
+  appendMessage('user', text);
+  try {
+    const { reply } = await window.pywebview.api.send_text(text);
+    appendMessage('assistant', reply || '(нет ответа)');
+  } finally {
+    state.busy = false;
+  }
+}
+
+// --- команды: приложения -----------------------------------------------------
+async function renderApps() {
+  const apps = await window.pywebview.api.list_apps();
+  const grid = $('#app-grid');
+  grid.innerHTML = '';
+  apps.forEach(app => {
+    const card = el('button', 'app-card', app);
+    card.addEventListener('click', async () => {
+      card.disabled = true;
+      await window.pywebview.api.open_app(app);
+      card.disabled = false;
+    });
+    grid.appendChild(card);
+  });
+  $('#settings-app-list').textContent = apps.join(' · ');
+}
+
+function renderSysActions() {
+  const actions = [
+    { name: 'Диспетчер задач', app: 'task_manager', confirm: false },
+    { name: 'Настройки Windows', app: 'settings', confirm: false },
+    { name: 'Заблокировать экран', fn: 'lock_screen', confirm: true, danger: true },
+    { name: 'Спящий режим', fn: 'sleep_system', confirm: true, danger: true },
+  ];
+  const box = $('#sys-actions');
+  box.innerHTML = '';
+  actions.forEach(a => {
+    const row = el('div', 'sys-action');
+    row.appendChild(el('span', null, a.name));
+    const btn = el('button', a.danger ? 'danger' : '', 'Выполнить');
+    btn.addEventListener('click', async () => {
+      if (a.confirm && !confirm(`${a.name}?`)) return;
+      btn.disabled = true;
+      if (a.fn) await window.pywebview.api[a.fn]();
+      else await window.pywebview.api.open_app(a.app);
+      btn.disabled = false;
+    });
+    row.appendChild(btn);
+    box.appendChild(row);
+  });
+}
+
+// --- команды: файловый браузер ------------------------------------------------
+async function refreshFileBrowser(path) {
+  if (path !== undefined) state.filePath = path;
+  const result = await window.pywebview.api.list_dir(state.filePath);
+  $('#file-path').textContent = '/' + state.filePath;
+  const list = $('#file-list');
+  list.innerHTML = '';
+
+  if (!Array.isArray(result)) {
+    list.appendChild(el('div', 'file-row', `<span class="meta">${result.error || 'ошибка'}</span>`));
+    return;
+  }
+
+  if (state.filePath) {
+    const up = el('div', 'file-row dir');
+    up.innerHTML = '<span class="name">.. (наверх)</span>';
+    up.querySelector('.name').addEventListener('click', () => {
+      const parts = state.filePath.split('/').filter(Boolean);
+      parts.pop();
+      refreshFileBrowser(parts.join('/'));
+    });
+    list.appendChild(up);
+  }
+
+  result.forEach(entry => {
+    const row = el('div', 'file-row' + (entry.is_dir ? ' dir' : ''));
+    const name = el('span', 'name', entry.name);
+    const meta = el('span', 'meta', entry.is_dir ? '' : formatSize(entry.size));
+    name.addEventListener('click', () => {
+      const next = state.filePath ? state.filePath + '/' + entry.name : entry.name;
+      if (entry.is_dir) refreshFileBrowser(next);
+      else window.pywebview.api.open_file(next);
+    });
+    row.appendChild(name);
+    row.appendChild(meta);
+    list.appendChild(row);
+  });
+}
+
+function formatSize(bytes) {
+  if (bytes === null || bytes === undefined) return '';
+  if (bytes < 1024) return bytes + ' Б';
+  return (bytes / 1024).toFixed(1) + ' КБ';
+}
+
+// --- настройки: голоса и модели -------------------------------------------------
+function renderVoices() {
+  const box = $('#voice-list');
+  box.innerHTML = '';
+  Object.entries(state.voices).forEach(([id, name]) => {
+    const active = id === state.currentVoice;
+    const card = el('div', 'voice-card' + (active ? ' active' : ''));
+    card.style.cursor = 'pointer';
+    card.appendChild(el('div', 'voice-avatar', (name[0] || '?').toUpperCase()));
+    const body = el('div', 'card-body');
+    body.appendChild(el('div', 'card-name', name));
+    body.appendChild(el('div', 'card-desc', id));
+    card.appendChild(body);
+    if (active) card.appendChild(el('div', 'badge', 'АКТИВЕН'));
+    card.addEventListener('click', async () => {
+      state.currentVoice = id;
+      await window.pywebview.api.switch_voice(id);
+      renderVoices();
+    });
+    box.appendChild(card);
+  });
+}
+
+function renderModels() {
+  const box = $('#model-list');
+  box.innerHTML = '';
+  state.models.forEach(model => {
+    const active = model === state.currentModel;
+    const card = el('div', 'model-card' + (active ? ' active' : ''));
+    card.style.cursor = 'pointer';
+    const body = el('div', 'card-body');
+    body.appendChild(el('div', 'card-name', model));
+    card.appendChild(body);
+    if (active) card.appendChild(el('div', 'badge', 'ЗАГРУЖЕНА'));
+    card.addEventListener('click', async () => {
+      state.currentModel = model;
+      await window.pywebview.api.switch_model(model);
+      renderModels();
+      $('#status-line').innerHTML = statusLine();
+    });
+    box.appendChild(card);
+  });
+}
+
+function statusLine() {
+  return `модель: <b>${state.currentModel}</b> · голос: <b>${state.voices[state.currentVoice] || state.currentVoice}</b>`;
+}
+
+// --- инициализация -----------------------------------------------------------
+async function boot() {
+  try {
+    const info = await window.pywebview.api.init();
+    state.voices = info.voices;
+    state.models = info.models;
+    state.currentVoice = info.current_voice;
+    state.currentModel = info.current_model;
+
+    $('#status-line').innerHTML = statusLine();
+    renderVoices();
+    renderModels();
+    await renderApps();
+    renderSysActions();
+
+    $('#loading').style.display = 'none';
+  } catch (err) {
+    $('#loading').classList.add('error');
+    $('#loading-text').textContent = 'Не удалось загрузить ассистента: ' + err;
+  }
+}
+
+if (window.pywebview) {
+  boot();
+} else {
+  window.addEventListener('pywebviewready', boot);
+}
+</script>
+</body>
+</html>

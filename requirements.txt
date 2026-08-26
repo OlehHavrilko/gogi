@@ -4,6 +4,7 @@ numpy
 soundfile
 ollama
 pyyaml
+pywebview
 torchvision
 f5-tts
 transformers==4.57.6
