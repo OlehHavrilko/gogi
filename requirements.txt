@@ -3,15 +3,15 @@ sounddevice
 numpy
 soundfile
 ollama
+pyyaml
 torchvision
 f5-tts
-coqui-tts[codec]
-chatterbox-tts
 transformers==4.57.6
 huggingface-hub==0.36.2
 setuptools<81
 
-# ВАЖНО: torch/torchaudio ставятся ОТДЕЛЬНО из ROCm-репозитория AMD (см. README),
-# а не из PyPI — иначе получите CPU-only сборку без GPU-ускорения.
+# ВАЖНО: torch/torchaudio НЕ ставятся из этого файла. Установите их отдельно
+# под свою видеокарту (NVIDIA CUDA или AMD ROCm) — см. README, раздел
+# "Железо и GPU-ускорение". Иначе получите CPU-only сборку без ускорения.
 # После установки любого пакета выше проверяйте torch.cuda.is_available()
-# и при необходимости переустанавливайте ROCm-колёса с --force-reinstall --no-deps.
+# и при необходимости переустанавливайте GPU-колёса с --force-reinstall --no-deps.

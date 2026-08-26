@@ -1,15 +1,10 @@
 """Проверка полного пайплайна без микрофона: текст -> LLM -> TTS (с tool calling)."""
 import ollama
-from tts_engine import TTSEngine, StreamingSpeaker
-from tools import TOOL_SCHEMA, execute_tool_call
 
-MODEL = "gpt-oss:20b"
-SYSTEM_PROMPT = (
-    "Ты — голосовой ассистент по имени Гоги. Отвечай на русском языке, "
-    "кратко и естественно, как в живом разговоре — без списков и markdown-разметки, "
-    "это будет озвучено вслух. Если пользователь просит открыть приложение, "
-    "используй инструмент open_app."
-)
+from config import LLM_MODEL as MODEL
+from config import SYSTEM_PROMPT
+from tools import TOOL_SCHEMA, execute_tool_call
+from tts_engine import StreamingSpeaker, TTSEngine
 
 
 def run_turn(messages, speaker):

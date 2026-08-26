@@ -1,0 +1,47 @@
+# Дефолтная конфигурация Гоги. Скопируйте в config.yaml и правьте под себя —
+# config.yaml в .gitignore и не попадёт в репозиторий.
+
+llm:
+  model: gpt-oss:20b
+  max_tool_iterations: 4
+  system_prompt: >
+    Ты — голосовой ассистент по имени Гоги. Отвечай на русском языке, кратко
+    и естественно, как в живом разговоре — без списков и markdown-разметки,
+    это будет озвучено вслух. Если пользователь просит открыть приложение,
+    используй инструмент open_app.
+
+stt:
+  model_size: medium
+
+tts:
+  nfe_step: 32
+  cfg_strength: 3.0
+
+# Значения путей поддерживают переменные окружения Windows (%APPDATA% и т.п.),
+# они разворачиваются автоматически при загрузке конфига.
+apps:
+  chrome: "C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe"
+  browser: "C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe"
+  notepad: "notepad.exe"
+  calculator: "calc.exe"
+  explorer: "explorer.exe"
+  cmd: "cmd.exe"
+  powershell: "powershell.exe"
+  vscode: "%LOCALAPPDATA%\\Programs\\Microsoft VS Code\\Code.exe"
+  telegram: "%APPDATA%\\Telegram Desktop\\Telegram.exe"
+  task_manager: "taskmgr.exe"
+  settings: "ms-settings:"
+
+# Русские алиасы -> канонический ключ в apps.
+aliases:
+  хром: chrome
+  браузер: browser
+  блокнот: notepad
+  калькулятор: calculator
+  проводник: explorer
+  командная строка: cmd
+  терминал: powershell
+  телеграм: telegram
+  телеграмм: telegram
+  диспетчер задач: task_manager
+  настройки: settings

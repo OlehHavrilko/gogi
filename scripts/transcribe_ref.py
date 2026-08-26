@@ -1,5 +1,6 @@
-from stt_engine import STTEngine
 import soundfile as sf
+
+from stt_engine import STTEngine
 
 audio, sr = sf.read("voices/gogi_voice_16k.wav", dtype="float32")
 

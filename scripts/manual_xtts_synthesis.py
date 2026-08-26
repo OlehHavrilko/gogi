@@ -1,11 +1,16 @@
+"""Архив: сравнительный тест XTTS-v2, отклонён в пользу F5-TTS-Russian
+(латентность 30-65с против 7-10с на этом железе, см. README). Требует
+`pip install coqui-tts[codec]` — эта зависимость сознательно НЕ входит в
+requirements.txt, так как в продукте не используется."""
+
 import os
 import time
 
 os.environ.setdefault("COQUI_TOS_AGREED", "1")
 
+import soundfile as sf
 import torch
 import torchaudio
-import soundfile as sf
 
 if not torch.distributed.is_available():
     class _StubReduceOp:
@@ -35,6 +40,5 @@ wav = tts.tts(
 )
 print(f"Синтез занял {time.time()-t0:.1f}с")
 
-import soundfile as sf
 sf.write("voices/xtts_test_gogi.wav", wav, 24000)
 print("Сохранено в voices/xtts_test_gogi.wav")

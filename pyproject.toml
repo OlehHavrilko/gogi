@@ -1,0 +1,18 @@
+[tool.ruff]
+line-length = 100
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP"]
+ignore = [
+    "BLE001",  # намеренно широкий except на границах I/O (Ollama/микрофон/модели) —
+               # цель именно поймать любую ошибку и показать понятное сообщение
+]
+
+[tool.ruff.lint.per-file-ignores]
+# torchaudio.load подменяется ДО импорта f5_tts.api — импорт после монки-патча
+# структурно обязателен, это не забытый порядок импортов.
+"tts_engine.py" = ["E402"]
+"scripts/*.py" = ["E402"]
+# sys.stdout.reconfigure() должен идти до import ollama, иначе консольный
+# вывод на Windows ломается на кириллице.
+"main.py" = ["E402"]

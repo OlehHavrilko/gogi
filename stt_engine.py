@@ -4,11 +4,13 @@ import numpy as np
 import sounddevice as sd
 from faster_whisper import WhisperModel
 
+from config import STT_MODEL_SIZE
+
 SAMPLE_RATE = 16000
 
 
 class STTEngine:
-    def __init__(self, model_size: str = "medium"):
+    def __init__(self, model_size: str = STT_MODEL_SIZE):
         # CPU + int8: разумный компромисс скорость/точность на Ryzen 5600 без CUDA
         self.model = WhisperModel(model_size, device="cpu", compute_type="int8")
 

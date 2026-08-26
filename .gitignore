@@ -6,6 +6,7 @@ __pycache__/
 *.mp3
 *.safetensors
 voices/f5_ru/
+config.yaml
 
 # производственный референс-голос — держим в репо, он маленький
 !voices/gogi_voice.wav

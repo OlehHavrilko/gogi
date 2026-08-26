@@ -1,38 +1,10 @@
 """Реестр приложений, которые ассистент может открывать по команде.
-Белый список — сознательно: LLM не должен уметь запускать произвольные команды."""
+Белый список — сознательно: LLM не должен уметь запускать произвольные команды.
+Сами пути и алиасы задаются в config.yaml / config.example.yaml."""
 
-import os
 import subprocess
 
-APPS = {
-    "chrome": r"C:\Program Files\Google\Chrome\Application\chrome.exe",
-    "browser": r"C:\Program Files\Google\Chrome\Application\chrome.exe",
-    "notepad": "notepad.exe",
-    "calculator": "calc.exe",
-    "explorer": "explorer.exe",
-    "cmd": "cmd.exe",
-    "powershell": "powershell.exe",
-    "vscode": r"C:\Users\olehh\AppData\Local\Programs\Microsoft VS Code\Code.exe",
-    "telegram": os.path.expandvars(r"%APPDATA%\Telegram Desktop\Telegram.exe"),
-    "task_manager": "taskmgr.exe",
-    "settings": "ms-settings:",
-}
-
-# Русские алиасы -> канонический ключ в APPS.
-# Модель иногда называет приложение по-русски, несмотря на enum с английскими ключами.
-ALIASES = {
-    "хром": "chrome",
-    "браузер": "browser",
-    "блокнот": "notepad",
-    "калькулятор": "calculator",
-    "проводник": "explorer",
-    "командная строка": "cmd",
-    "терминал": "powershell",
-    "телеграм": "telegram",
-    "телеграмм": "telegram",
-    "диспетчер задач": "task_manager",
-    "настройки": "settings",
-}
+from config import ALIASES, APPS
 
 TOOL_SCHEMA = [
     {
@@ -68,6 +40,7 @@ def open_app(app: str) -> str:
         return f"Приложение '{app}' не найдено в белом списке."
     try:
         if target.startswith("ms-settings:"):
+            import os
             os.startfile(target)
         else:
             subprocess.Popen(target)

@@ -1,7 +1,8 @@
 import time
+
+import soundfile as sf
 import torch
 import torchaudio
-import soundfile as sf
 
 if not torch.distributed.is_available():
     # ROCm-сборка torch для Windows не включает torch.distributed;
