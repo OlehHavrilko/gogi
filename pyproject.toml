@@ -1,3 +1,39 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "gogi"
+version = "0.1.0"
+description = "Локальный голосовой ассистент: STT (faster-whisper) -> LLM (Ollama) -> TTS (F5-TTS-Russian)"
+requires-python = ">=3.12"
+dependencies = [
+    "faster-whisper",
+    "sounddevice",
+    "numpy",
+    "soundfile",
+    "ollama",
+    "pyyaml",
+    "textual",
+    "pywebview",
+    "torchvision",
+    "f5-tts",
+    "transformers==4.57.6",
+    "huggingface-hub==0.36.2",
+    "setuptools<81",
+]
+# torch/torchaudio НЕ входят сюда намеренно — их нужно ставить отдельно под
+# конкретную видеокарту (NVIDIA CUDA или AMD ROCm), см. README. `pip install
+# -e .` не заменяет этот шаг.
+
+[project.scripts]
+gogi = "tui:main"
+gogi-gui = "gui:main"
+gogi-console = "main:main"
+
+[tool.setuptools]
+py-modules = ["main", "tui", "gui", "assistant", "tools", "config", "gpu", "stt_engine", "tts_engine"]
+
 [tool.ruff]
 line-length = 100
 

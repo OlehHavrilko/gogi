@@ -21,6 +21,13 @@ def main():
         while True:
             try:
                 audio = assistant.record()
+            except EOFError:
+                # stdin не интерактивен (нет реального терминала) — Enter
+                # никогда не придёт, ретраить дальше бессмысленно и опасно:
+                # быстрый цикл открытия/закрытия InputStream может уронить
+                # аудио-подсистему.
+                print("\n[ошибка] stdin не интерактивен, выхожу.")
+                sys.exit(1)
             except Exception as e:
                 print(f"[ошибка] запись с микрофона не удалась: {e}")
                 continue

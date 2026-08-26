@@ -297,5 +297,9 @@ class GogiApp(App):
             sleep_system()
 
 
-if __name__ == "__main__":
+def main():
     GogiApp().run()
+
+
+if __name__ == "__main__":
+    main()

@@ -128,6 +128,16 @@ venv\Scripts\python main.py     # простой консольный REPL (го
 venv\Scripts\python gui.py      # GUI (pywebview) — альтернатива в отдельном окне
 ```
 
+Либо поставить проект как пакет (editable install — код исполняется прямо из
+репозитория, torch/torchaudio уже должны быть установлены отдельно, см. выше)
+и получить обычные консольные команды:
+```bash
+venv\Scripts\python -m pip install -e . --no-deps
+gogi            # терминальный интерфейс
+gogi-console    # консольный REPL
+gogi-gui        # GUI
+```
+
 ## Как пользоваться
 
 **TUI (`tui.py`, основной интерфейс):**
