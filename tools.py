@@ -10,7 +10,7 @@ import os
 import subprocess
 from pathlib import Path
 
-from config import ALIASES, APPS, FILES_MAX_READ_BYTES, FILES_ROOT
+from config import ALIASES, APPS, FILES_HIDE, FILES_MAX_READ_BYTES, FILES_ROOT
 
 TOOL_SCHEMA = [
     {
@@ -97,6 +97,8 @@ def list_dir(rel_path: str = "") -> list[dict] | dict:
 
     entries = []
     for p in sorted(target.iterdir(), key=lambda x: (not x.is_dir(), x.name.lower())):
+        if p.name in FILES_HIDE:
+            continue
         entries.append({
             "name": p.name,
             "is_dir": p.is_dir(),

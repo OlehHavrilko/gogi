@@ -57,3 +57,4 @@ ALIASES: dict[str, str] = dict(_config.get("aliases", {}))
 # сравнение "внутри/снаружи" в tools.py опирается именно на resolve().
 FILES_ROOT: Path = (_ROOT / _config.get("files", {}).get("root_dir", ".")).resolve()
 FILES_MAX_READ_BYTES: int = _config.get("files", {}).get("max_read_bytes", 65536)
+FILES_HIDE: set[str] = set(_config.get("files", {}).get("hide", []))

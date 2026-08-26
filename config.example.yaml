@@ -32,6 +32,16 @@ tts:
 files:
   root_dir: "."
   max_read_bytes: 65536
+  # Скрыть из файлового браузера (не влияет на доступ через open_file/
+  # read_file напрямую по пути — только на список в list_dir).
+  hide:
+    - .git
+    - .github
+    - __pycache__
+    - venv
+    - .pytest_cache
+    - .ruff_cache
+    - gogi.egg-info
 
 # Значения путей поддерживают переменные окружения Windows (%APPDATA% и т.п.),
 # они разворачиваются автоматически при загрузке конфига.

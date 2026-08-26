@@ -70,6 +70,13 @@ def test_list_dir_returns_project_files():
     assert "main.py" in names
 
 
+def test_list_dir_hides_noise_directories():
+    names = {e["name"] for e in tools.list_dir("")}
+    assert "venv" not in names
+    assert ".git" not in names
+    assert "__pycache__" not in names
+
+
 def test_list_dir_rejects_path_traversal_above_root():
     result = tools.list_dir("../../")
     assert isinstance(result, dict)
