@@ -4,11 +4,15 @@
 llm:
   model: gpt-oss:20b
   max_tool_iterations: 4
+  # Только для выпадающего списка в GUI (Settings) — переключение принимает
+  # любой тег модели, установленной в Ollama, этот список не ограничивает.
+  available_models:
+    - gpt-oss:20b
   system_prompt: >
     Ты — голосовой ассистент по имени Гоги. Отвечай на русском языке, кратко
     и естественно, как в живом разговоре — без списков и markdown-разметки,
-    это будет озвучено вслух. Если пользователь просит открыть приложение,
-    используй инструмент open_app.
+    это будет озвучено вслух. Если пользователь просит открыть приложение
+    или файл, используй инструменты open_app / open_file.
 
 stt:
   model_size: medium
@@ -16,6 +20,18 @@ stt:
 tts:
   nfe_step: 32
   cfg_strength: 3.0
+  default_voice: gogi
+  voices:
+    gogi:
+      name: "Gogi Kavkaz"
+      ref_audio: voices/gogi_voice.wav
+      ref_text: voices/gogi_transcript.txt
+
+# Whitelist-корень для файловых инструментов (list_dir/read_file/open_file) —
+# путь относительно корня проекта. Выход за пределы этой директории запрещён.
+files:
+  root_dir: "."
+  max_read_bytes: 65536
 
 # Значения путей поддерживают переменные окружения Windows (%APPDATA% и т.п.),
 # они разворачиваются автоматически при загрузке конфига.

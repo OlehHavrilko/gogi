@@ -1,48 +1,11 @@
-"""Проверка полного пайплайна без микрофона: текст -> LLM -> TTS (с tool calling)."""
-import ollama
+"""Проверка полного пайплайна без микрофона: текст -> LLM -> TTS (с tool calling).
+Ручной прогон на живом железе (Ollama + GPU) — не автотест."""
 
-from config import LLM_MODEL as MODEL
-from config import SYSTEM_PROMPT
-from tools import TOOL_SCHEMA, execute_tool_call
-from tts_engine import StreamingSpeaker, TTSEngine
+from assistant import Assistant
 
-
-def run_turn(messages, speaker):
-    stream = ollama.chat(model=MODEL, messages=messages, tools=TOOL_SCHEMA, stream=True)
-    full_content = ""
-    tool_calls = []
-    for chunk in stream:
-        msg = chunk.get("message", {})
-        content = msg.get("content", "")
-        if content:
-            print(content, end="", flush=True)
-            full_content += content
-            speaker.feed(content)
-        if msg.get("tool_calls"):
-            tool_calls.extend(msg["tool_calls"])
-    speaker.flush()
-    print()
-    if tool_calls:
-        messages.append({"role": "assistant", "content": full_content, "tool_calls": tool_calls})
-        for call in tool_calls:
-            name = call["function"]["name"]
-            args = call["function"]["arguments"]
-            result = execute_tool_call(name, args)
-            print(f"[tool] {name}({args}) -> {result}")
-            messages.append({"role": "tool", "content": result, "name": name})
-        return run_turn(messages, speaker)
-    messages.append({"role": "assistant", "content": full_content})
-    return full_content
-
-
-print("Загружаю TTS (F5-TTS-Russian)...")
-tts = TTSEngine()
-speaker = StreamingSpeaker(tts)
-
-messages = [{"role": "system", "content": SYSTEM_PROMPT}]
-messages.append({"role": "user", "content": "Открой, пожалуйста, калькулятор."})
+print("Загружаю ассистента (STT + TTS)...")
+assistant = Assistant()
 
 print("Гоги: ", end="", flush=True)
-run_turn(messages, speaker)
-tts.wait_until_done()
+assistant.respond("Открой, пожалуйста, калькулятор.")
 print("\n=== Готово ===")

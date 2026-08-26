@@ -41,11 +41,10 @@ torchaudio.load = _load_via_soundfile
 
 from f5_tts.api import F5TTS
 
-from config import TTS_CFG_STRENGTH, TTS_NFE_STEP
+from config import TTS_CFG_STRENGTH, TTS_DEFAULT_VOICE, TTS_NFE_STEP, TTS_VOICES
 
-VOICES_DIR = Path(__file__).parent / "voices"
-REF_AUDIO = VOICES_DIR / "gogi_voice.wav"
-REF_TEXT_FILE = VOICES_DIR / "gogi_transcript.txt"
+_PROJECT_ROOT = Path(__file__).parent
+VOICES_DIR = _PROJECT_ROOT / "voices"
 
 _SENTENCE_SPLIT = re.compile(r"(?<=[.!?…])\s+")
 
@@ -62,11 +61,30 @@ class TTSEngine:
             vocab_file=str(VOICES_DIR / "f5_ru" / "vocab.txt"),
             device=device,
         )
-        self.ref_text = REF_TEXT_FILE.read_text(encoding="utf-8").strip()
+
+        self.voice_id: str = ""
+        self.ref_audio: Path | None = None
+        self.ref_text: str = ""
+        self.set_voice(TTS_DEFAULT_VOICE)
 
         self._queue: queue.Queue[str | None] = queue.Queue()
         self._worker = threading.Thread(target=self._run, daemon=True)
         self._worker.start()
+
+    def available_voices(self) -> dict[str, str]:
+        """{voice_id: отображаемое имя} — для выпадающего списка в GUI."""
+        return {vid: v.get("name", vid) for vid, v in TTS_VOICES.items()}
+
+    def set_voice(self, voice_id: str) -> None:
+        """Переключить референс-голос. Синтез берёт self.ref_audio/ref_text
+        на каждый вызов (не запечён в модель при загрузке), поэтому
+        переключение работает без перезагрузки F5TTS."""
+        voice = TTS_VOICES.get(voice_id)
+        if voice is None:
+            raise ValueError(f"Голос '{voice_id}' не найден в конфиге (tts.voices).")
+        self.ref_audio = _PROJECT_ROOT / voice["ref_audio"]
+        self.ref_text = (_PROJECT_ROOT / voice["ref_text"]).read_text(encoding="utf-8").strip()
+        self.voice_id = voice_id
 
     def _synthesize(self, text: str):
         text = text.strip()
@@ -74,7 +92,7 @@ class TTSEngine:
             return
         try:
             wav, sr, _ = self.tts.infer(
-                ref_file=str(REF_AUDIO),
+                ref_file=str(self.ref_audio),
                 ref_text=self.ref_text,
                 gen_text=text,
                 nfe_step=TTS_NFE_STEP,
