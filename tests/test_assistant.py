@@ -80,6 +80,23 @@ def test_switch_voice_delegates_to_tts_engine(mocker):
     a.tts.set_voice.assert_called_once_with("vova")
 
 
+def test_set_tts_params_delegates_to_tts_engine(mocker):
+    a = _make_assistant(mocker)
+
+    a.set_tts_params(16, 2.0)
+
+    a.tts.set_synthesis_params.assert_called_once_with(16, 2.0)
+
+
+def test_record_interrupts_tts_before_listening(mocker):
+    a = _make_assistant(mocker)
+
+    a.record()
+
+    a.tts.interrupt.assert_called_once()
+    a.stt.record_until_enter.assert_called_once()
+
+
 def test_respond_appends_user_message_and_waits_for_tts(mocker):
     mocker.patch("assistant.ollama.chat", return_value=iter([_chunk("ок")]))
     a = _make_assistant(mocker)

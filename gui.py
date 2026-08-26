@@ -25,11 +25,16 @@ class Api:
             "models": self.assistant.available_models(),
             "current_voice": self.assistant.tts.voice_id,
             "current_model": self.assistant.model,
+            "nfe_step": self.assistant.tts.nfe_step,
+            "cfg_strength": self.assistant.tts.cfg_strength,
         }
 
     # --- диалог -----------------------------------------------------------
 
     def start_recording(self) -> bool:
+        # barge-in: клик по орбу означает "я хочу говорить сейчас", даже
+        # если ассистент ещё не договорил предыдущий ответ.
+        self.assistant.tts.interrupt()
         self.assistant.stt.start_recording()
         return True
 
@@ -55,6 +60,10 @@ class Api:
 
     def switch_model(self, model: str) -> bool:
         self.assistant.switch_model(model)
+        return True
+
+    def set_tts_params(self, nfe_step: int, cfg_strength: float) -> bool:
+        self.assistant.set_tts_params(nfe_step, cfg_strength)
         return True
 
     # --- команды / файлы (панель "Команды") --------------------------------

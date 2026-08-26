@@ -67,6 +67,9 @@ class TTSEngine:
         self.ref_text: str = ""
         self.set_voice(TTS_DEFAULT_VOICE)
 
+        self.nfe_step = TTS_NFE_STEP
+        self.cfg_strength = TTS_CFG_STRENGTH
+
         self._queue: queue.Queue[str | None] = queue.Queue()
         self._worker = threading.Thread(target=self._run, daemon=True)
         self._worker.start()
@@ -86,6 +89,30 @@ class TTSEngine:
         self.ref_text = (_PROJECT_ROOT / voice["ref_text"]).read_text(encoding="utf-8").strip()
         self.voice_id = voice_id
 
+    def set_synthesis_params(
+        self, nfe_step: int | None = None, cfg_strength: float | None = None
+    ) -> None:
+        """Изменить параметры синтеза на лету (слайдеры в Settings) — влияет
+        только на следующие фразы, применяется без перезагрузки модели."""
+        if nfe_step is not None:
+            self.nfe_step = nfe_step
+        if cfg_strength is not None:
+            self.cfg_strength = cfg_strength
+
+    def interrupt(self) -> None:
+        """Barge-in: остановить текущее воспроизведение и выбросить ещё не
+        озвученные фразы из очереди — пользователь начал говорить снова, не
+        дожидаясь, пока ассистент договорит. Best-effort: фраза, которую
+        воркер уже успел выхватить из очереди в момент вызова, доиграет."""
+        while True:
+            try:
+                self._queue.get_nowait()
+            except queue.Empty:
+                break
+            else:
+                self._queue.task_done()
+        sd.stop()
+
     def _synthesize(self, text: str):
         text = text.strip()
         if not text:
@@ -95,8 +122,8 @@ class TTSEngine:
                 ref_file=str(self.ref_audio),
                 ref_text=self.ref_text,
                 gen_text=text,
-                nfe_step=TTS_NFE_STEP,
-                cfg_strength=TTS_CFG_STRENGTH,
+                nfe_step=self.nfe_step,
+                cfg_strength=self.cfg_strength,
             )
             sd.play(wav, sr)
             sd.wait()

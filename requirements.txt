@@ -4,6 +4,7 @@ numpy
 soundfile
 ollama
 pyyaml
+textual
 pywebview
 torchvision
 f5-tts
@@ -16,3 +17,8 @@ setuptools<81
 # "Железо и GPU-ускорение". Иначе получите CPU-only сборку без ускорения.
 # После установки любого пакета выше проверяйте torch.cuda.is_available()
 # и при необходимости переустанавливайте GPU-колёса с --force-reinstall --no-deps.
+#
+# pip предупредит о конфликте версий rich: textual тянет rich>=14.2, а
+# cached-path (транзитивная зависимость f5-tts) декларирует rich<14. На
+# практике f5_tts.api импортируется и работает нормально с rich 15 —
+# конфликт затрагивает только версийные метаданные, не рантайм.

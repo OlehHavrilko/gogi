@@ -34,10 +34,18 @@ class Assistant:
     def switch_voice(self, voice_id: str) -> None:
         self.tts.set_voice(voice_id)
 
+    def set_tts_params(
+        self, nfe_step: int | None = None, cfg_strength: float | None = None
+    ) -> None:
+        self.tts.set_synthesis_params(nfe_step, cfg_strength)
+
     # --- диалог ---------------------------------------------------------
 
     def record(self):
-        """Блокирующая запись с микрофона (push-to-talk, Enter/Enter)."""
+        """Блокирующая запись с микрофона (push-to-talk, Enter/Enter).
+        Перед стартом — barge-in: обрываем то, что ассистент ещё договаривает,
+        раз пользователь уже готов говорить снова."""
+        self.tts.interrupt()
         return self.stt.record_until_enter()
 
     def transcribe(self, audio) -> str:

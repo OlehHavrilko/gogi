@@ -32,6 +32,23 @@ def test_init_builds_assistant_once(mocker):
     mock_assistant_cls.assert_called_once()
 
 
+def test_start_recording_interrupts_tts_first(mocker):
+    api, fake = _api_with_fake_assistant(mocker)
+
+    api.start_recording()
+
+    fake.tts.interrupt.assert_called_once()
+    fake.stt.start_recording.assert_called_once()
+
+
+def test_set_tts_params_delegates_to_assistant(mocker):
+    api, fake = _api_with_fake_assistant(mocker)
+
+    api.set_tts_params(16, 2.0)
+
+    fake.set_tts_params.assert_called_once_with(16, 2.0)
+
+
 def test_stop_recording_and_respond_returns_reply(mocker):
     api, fake = _api_with_fake_assistant(mocker)
 
