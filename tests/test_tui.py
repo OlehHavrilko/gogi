@@ -76,6 +76,45 @@ async def test_toggle_recording_starts_and_interrupts_tts(mocker):
 
 
 @pytest.mark.asyncio
+async def test_typed_message_streams_reply_into_transcript_via_events(mocker):
+    """Интеграция: настоящий Assistant (мокнуты только STT/TTS/Ollama),
+    прогон через Pilot. Проверяет, что события ядра долетают до виджетов —
+    стриминг ответа и индикатор состояния."""
+    mocker.patch("assistant.STTEngine")
+    mocker.patch("assistant.TTSEngine")
+    mocker.patch(
+        "assistant.ollama.chat",
+        return_value=iter([
+            {"message": {"content": "Секунду, "}},
+            {"message": {"content": "уже открываю."}},
+        ]),
+    )
+    from textual.widgets import RichLog, Static
+
+    app = tui.GogiApp()
+    async with app.run_test() as pilot:
+        await pilot.pause()
+        while app.assistant is None:  # ждём фонового _load_assistant_blocking
+            await pilot.pause(0.05)
+
+        inp = app.query_one("#text-input")
+        inp.value = "открой калькулятор"
+        inp.post_message(inp.Submitted(inp, "открой калькулятор"))
+
+        for _ in range(40):
+            await pilot.pause(0.05)
+            if app.assistant.state.name == "IDLE" and not app._reply_buf:
+                break
+
+        transcript = app.query_one("#transcript", RichLog)
+        rendered = "\n".join(str(line) for line in transcript.lines)
+        assert "открой калькулятор" in rendered
+        assert "Секунду, уже открываю." in rendered
+        assert str(app.query_one("#streaming", Static).render()) == ""  # стриминг очищен
+        assert app._reply_buf == ""
+
+
+@pytest.mark.asyncio
 async def test_sys_lock_action_requires_confirmation(mocker):
     lock = mocker.patch("tui.lock_screen")
     fake_assistant = mocker.Mock()
