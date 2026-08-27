@@ -14,3 +14,12 @@ config.yaml
 # производственный референс-голос — держим в репо, он маленький
 !voices/gogi_voice.wav
 !voices/gogi_voice.mp3
+# тестовое аудио для gogi-bench (16 кГц, ~9.6с) — нужно для воспроизводимости замера
+!voices/gogi_voice_16k.wav
+
+# сырые отчёты бенчмарка машинно-специфичны; в репо только зафиксированный baseline
+benchmarks/*.json
+!benchmarks/baseline.json
+
+# Claude Code local settings
+.claude/

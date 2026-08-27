@@ -30,9 +30,11 @@ dependencies = [
 gogi = "tui:main"
 gogi-gui = "gui:main"
 gogi-console = "main:main"
+gogi-bench = "scripts.bench_pipeline:main"
 
 [tool.setuptools]
 py-modules = ["main", "tui", "gui", "assistant", "tools", "config", "gpu", "stt_engine", "tts_engine"]
+packages = ["scripts"]
 
 [tool.ruff]
 line-length = 100

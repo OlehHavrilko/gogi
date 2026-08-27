@@ -1,0 +1,107 @@
+{
+  "timestamp": "2026-08-28T01:06:48",
+  "runs_per_point": 3,
+  "gpu_backend": "AMD ROCm (HIP 7.2.53211-158bd99533)",
+  "stt": {
+    "base": {
+      "load_s": 0.859,
+      "transcribe": {
+        "median_s": 0.514,
+        "min_s": 0.485,
+        "max_s": 0.522,
+        "runs": 3
+      },
+      "rtf": 0.053,
+      "cer": 0.0319,
+      "text": "Слушай, дорогой, я тебе честно скажу. Такого голоса ты ещё не слышал. Садись, покажу, расскажу.",
+      "audio_duration_s": 9.613
+    },
+    "small": {
+      "load_s": 1.089,
+      "transcribe": {
+        "median_s": 1.792,
+        "min_s": 1.777,
+        "max_s": 1.903,
+        "runs": 3
+      },
+      "rtf": 0.186,
+      "cer": 0.0106,
+      "text": "Слушай, дорогой, я тебе честно скажу. Такого голоса ты ещё не слышал. Садись. Покажу. Расскажу.",
+      "audio_duration_s": 9.613
+    },
+    "medium": {
+      "load_s": 3.743,
+      "transcribe": {
+        "median_s": 5.79,
+        "min_s": 5.497,
+        "max_s": 5.863,
+        "runs": 3
+      },
+      "rtf": 0.602,
+      "cer": 0.0,
+      "text": "Слушай, дорогой, я тебе честно скажу. Такого голоса ты еще не слышал. Садись. Покажу. Расскажу.",
+      "audio_duration_s": 9.613
+    }
+  },
+  "llm": {
+    "Открой калькулятор.": {
+      "ttft_s": 1.769,
+      "total_s": 1.77,
+      "tokens": 0,
+      "tool_calls": 1,
+      "runs": 3
+    },
+    "Который час?": {
+      "ttft_s": 3.535,
+      "total_s": 3.747,
+      "tokens": 26,
+      "tool_calls": 0,
+      "runs": 3
+    },
+    "Поставь громкость на пятьдесят процентов.": {
+      "ttft_s": 1.808,
+      "total_s": 2.029,
+      "tokens": 31,
+      "tool_calls": 0,
+      "runs": 3
+    }
+  },
+  "tts": {
+    "8": {
+      "synth": {
+        "median_s": 0.396,
+        "min_s": 0.396,
+        "max_s": 0.422,
+        "runs": 3
+      },
+      "audio_len_s": 3.68
+    },
+    "16": {
+      "synth": {
+        "median_s": 0.761,
+        "min_s": 0.761,
+        "max_s": 0.763,
+        "runs": 3
+      },
+      "audio_len_s": 3.68
+    },
+    "32": {
+      "synth": {
+        "median_s": 1.519,
+        "min_s": 1.516,
+        "max_s": 1.523,
+        "runs": 3
+      },
+      "audio_len_s": 3.68
+    }
+  },
+  "e2e": {
+    "available": true,
+    "stt_model": "base",
+    "stt_s": 0.514,
+    "stt_cer": 0.0319,
+    "llm_ttft_s": 1.808,
+    "tts_first_sentence_s": 0.396,
+    "ttfa_estimate_s": 2.718
+  }
+}
