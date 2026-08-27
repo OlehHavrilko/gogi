@@ -70,7 +70,7 @@ async def test_toggle_recording_starts_and_interrupts_tts(mocker):
         await pilot.pause()
         app.action_toggle_recording()
 
-        fake_assistant.tts.interrupt.assert_called_once()
+        fake_assistant.interrupt.assert_called_once()
         fake_assistant.stt.start_recording.assert_called_once()
         assert app.recording is True
 

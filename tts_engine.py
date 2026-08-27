@@ -47,6 +47,13 @@ _PROJECT_ROOT = Path(__file__).parent
 VOICES_DIR = _PROJECT_ROOT / "voices"
 
 _SENTENCE_SPLIT = re.compile(r"(?<=[.!?…])\s+")
+# Для первого куска ответа режем раньше — по запятой/тире/двоеточию, — чтобы
+# «Секунду,» ушло в синтез сразу, а не ждало первой точки. LLM
+# time-to-first-token сейчас доминирует в задержке (см. ROADMAP), и этот кусок
+# закрывает паузу перед голосом.
+_CLAUSE_SPLIT = re.compile(r"(?<=[,;:—])\s+")
+# Аварийный предел: если ни точки, ни запятой долго нет — не копим бесконечно.
+_FIRST_CHUNK_HARD_CAP = 60
 
 
 class TTSEngine:
@@ -151,23 +158,68 @@ class TTSEngine:
 
 
 class StreamingSpeaker:
-    """Собирает токены в предложения и сразу отдаёт их в TTS,
-    пока LLM продолжает генерировать следующие."""
+    """Собирает токены в предложения и сразу отдаёт их в TTS, пока LLM
+    генерирует следующие. Первый кусок каждого ответа отдаётся по более
+    раннему рубежу (запятая/двоеточие/тире или предел по длине) — чтобы
+    сократить паузу от конца речи пользователя до первого звука ответа."""
 
     def __init__(self, engine: TTSEngine):
         self.engine = engine
         self._buffer = ""
+        self._first_chunk_sent = False
 
     def feed(self, token: str):
         self._buffer += token
+        if not self._first_chunk_sent and self._try_emit_first_chunk():
+            return
         parts = _SENTENCE_SPLIT.split(self._buffer)
         if len(parts) > 1:
             for sentence in parts[:-1]:
                 if sentence.strip():
                     self.engine.say(sentence.strip())
+                    self._first_chunk_sent = True
             self._buffer = parts[-1]
+
+    def _try_emit_first_chunk(self) -> bool:
+        """Ранний рубеж для самого первого куска ответа. True — что-то ушло в
+        синтез, буфер обрезан."""
+        head, sep, tail = _split_once(self._buffer)
+        if sep is None and len(self._buffer) < _FIRST_CHUNK_HARD_CAP:
+            return False
+        if sep is None:  # предел по длине — режем по последнему пробелу
+            cut = self._buffer.rfind(" ", 0, _FIRST_CHUNK_HARD_CAP)
+            if cut <= 0:
+                return False
+            head, tail = self._buffer[:cut], self._buffer[cut + 1:]
+        if not head.strip():
+            self._buffer = tail
+            return False
+        self.engine.say(head.strip())
+        self._first_chunk_sent = True
+        self._buffer = tail
+        return True
 
     def flush(self):
         if self._buffer.strip():
             self.engine.say(self._buffer.strip())
         self._buffer = ""
+        self._first_chunk_sent = False  # следующий ход — снова ранний рубеж
+
+    def reset(self):
+        """Barge-in: выбросить недособранный хвост предложения, чтобы он не
+        уехал в синтез в начале следующего хода."""
+        self._buffer = ""
+        self._first_chunk_sent = False
+
+
+def _split_once(text: str) -> tuple[str, str | None, str]:
+    """Первый рубеж — конец предложения ИЛИ конец клаузы. Возвращает
+    (голова, разделитель|None, хвост). Разделитель None — рубежа нет."""
+    best = None
+    for rx in (_SENTENCE_SPLIT, _CLAUSE_SPLIT):
+        m = rx.search(text)
+        if m and (best is None or m.start() < best.start()):
+            best = m
+    if best is None:
+        return text, None, ""
+    return text[: best.start()], text[best.start(): best.end()], text[best.end():]

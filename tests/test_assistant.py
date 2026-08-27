@@ -2,17 +2,22 @@
 переключение модели/голоса — без реального обращения к Ollama/TTS/микрофону."""
 
 import assistant as assistant_module
+from state import State
 
 
 class _FakeSpeaker:
     def __init__(self):
         self.flushed = False
+        self.was_reset = False
 
     def feed(self, token):
         pass
 
     def flush(self):
         self.flushed = True
+
+    def reset(self):
+        self.was_reset = True
 
 
 def _chunk(content="", tool_calls=None):
@@ -53,6 +58,7 @@ def test_run_turn_stops_at_max_tool_iterations(mocker):
     mocker.patch("assistant.ollama.chat", side_effect=lambda **kw: iter([_chunk("", [call])]))
     mocker.patch("assistant.execute_tool_call", return_value="Открыл chrome.")
     a = _make_assistant(mocker)
+    a.fsm.to(State.THINKING)  # _run_turn выполняет tool-цикл из состояния THINKING
 
     result = a._run_turn()
 
@@ -106,3 +112,46 @@ def test_respond_appends_user_message_and_waits_for_tts(mocker):
     assert a.messages[1] == {"role": "user", "content": "привет"}
     assert result == "ок"
     a.tts.wait_until_done.assert_called_once()
+
+
+def test_respond_emits_events_and_walks_state_machine(mocker):
+    from events import Event
+
+    mocker.patch(
+        "assistant.ollama.chat",
+        return_value=iter([_chunk("Привет"), _chunk(" мир.")]),
+    )
+    a = _make_assistant(mocker)
+    events = []
+    for ev in (
+        Event.LLM_STARTED, Event.LLM_TOKEN, Event.LLM_DONE,
+        Event.TTS_STARTED, Event.TTS_DONE, Event.STATE_CHANGED,
+    ):
+        a.on(ev, lambda _e=ev, **kw: events.append((_e, kw)))
+
+    a.respond("привет")
+
+    names = [e for e, _ in events]
+    assert Event.LLM_STARTED in names
+    assert names.index(Event.LLM_STARTED) < names.index(Event.LLM_TOKEN)
+    assert names.index(Event.TTS_STARTED) < names.index(Event.TTS_DONE)
+    assert (Event.LLM_DONE, {"text": "Привет мир."}) in events
+    # состояние вернулось в IDLE после хода
+    assert a.state is State.IDLE
+    # прошли через THINKING и SPEAKING
+    passed = [kw["new"] for e, kw in events if e is Event.STATE_CHANGED]
+    assert State.THINKING in passed and State.SPEAKING in passed
+
+
+def test_respond_emits_error_event_when_ollama_down(mocker):
+    from events import Event
+
+    mocker.patch("assistant.ollama.chat", side_effect=ConnectionError("нет связи"))
+    a = _make_assistant(mocker)
+    errors = []
+    a.on(Event.ERROR, lambda message: errors.append(message))
+
+    a.respond("привет")
+
+    assert errors and "Ollama" in errors[0]
+    assert a.state is State.IDLE  # ядро восстановилось, не залипло

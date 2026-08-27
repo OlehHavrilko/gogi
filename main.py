@@ -1,11 +1,26 @@
 """Гоги: локальный голосовой ассистент. CLI-обёртка вокруг Assistant
-(STT -> LLM с tool calling -> TTS, см. assistant.py)."""
+(STT -> LLM с tool calling -> TTS, см. assistant.py).
+
+Ядро больше не печатает само — оно испускает события. Консоль подписывается
+на них здесь и выводит поток токенов, вызовы инструментов и ошибки в stdout."""
 
 import sys
 
 sys.stdout.reconfigure(encoding="utf-8")
 
 from assistant import Assistant
+from events import Event
+
+
+def _wire_console_output(assistant: Assistant) -> None:
+    assistant.on(Event.LLM_TOKEN, lambda token: print(token, end="", flush=True))
+    assistant.on(Event.LLM_DONE, lambda text: print())
+    assistant.on(
+        Event.TOOL_STARTED,
+        lambda name, args: print(f"\n[инструмент] {name}({args})...", flush=True),
+    )
+    assistant.on(Event.TOOL_DONE, lambda name, result: print(f"[инструмент] {name} -> {result}"))
+    assistant.on(Event.ERROR, lambda message: print(f"\n[ошибка] {message}"))
 
 
 def main():
@@ -15,6 +30,8 @@ def main():
     except Exception as e:
         print(f"[ошибка] не удалось загрузить ассистента: {e}")
         sys.exit(1)
+
+    _wire_console_output(assistant)
 
     print("\n=== Гоги готов. Ctrl+C для выхода. ===")
     try:

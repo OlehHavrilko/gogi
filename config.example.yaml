@@ -15,7 +15,11 @@ llm:
     или файл, используй инструменты open_app / open_file.
 
 stt:
-  model_size: medium
+  # Замер (gogi-bench, AMD/CPU int8): small — 1.1% CER, ~1.8с на клип 9.6с;
+  # base — 3.2% CER, ~0.5с; medium — 0% CER, ~5.8с. small берём дефолтом как
+  # компромисс точность/скорость; base — если нужна максимальная отзывчивость
+  # и команды простые, medium — если распознавание важнее задержки.
+  model_size: small
 
 tts:
   nfe_step: 32
