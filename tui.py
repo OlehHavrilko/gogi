@@ -20,13 +20,26 @@ from textual.widgets import (
     ListItem,
     ListView,
     RichLog,
+    Static,
     TabbedContent,
     TabPane,
 )
 
 from assistant import Assistant
 from config import APPS
+from events import Event
+from state import State
 from tools import list_dir, lock_screen, open_app, open_file, sleep_system
+
+_STATE_LABEL = {
+    State.IDLE: "готов",
+    State.LISTENING: "● слушаю",
+    State.TRANSCRIBING: "распознаю…",
+    State.THINKING: "думаю…",
+    State.EXECUTING_TOOL: "выполняю команду…",
+    State.SPEAKING: "► говорю",
+    State.ERROR: "ошибка",
+}
 
 _APP_NAMES = list(APPS.keys())
 
@@ -64,6 +77,7 @@ class GogiApp(App):
     Screen { background: $surface; }
     .section-label { color: $warning; text-style: bold; margin: 1 0 0 1; }
     #transcript { border: round $warning-darken-2; height: 1fr; margin: 1; }
+    #streaming { color: $text-muted; margin: 0 1; height: auto; }
     #text-input { margin: 0 1 1 1; }
     ListView { height: auto; max-height: 14; margin: 0 1 1 1; }
     #file-path { color: $text-muted; margin: 0 0 0 1; }
@@ -80,12 +94,14 @@ class GogiApp(App):
         self.recording = False
         self.file_path = ""
         self._file_entries: list[dict] = []
+        self._reply_buf = ""  # накопитель токенов текущего ответа для #streaming
 
     def compose(self) -> ComposeResult:
         yield Header(show_clock=True)
         with TabbedContent(initial="tab-main"):
             with TabPane("Главный", id="tab-main"):
                 yield RichLog(id="transcript", wrap=True, markup=True)
+                yield Static("", id="streaming")
                 yield Input(
                     placeholder="Напиши сообщение (или R — запись с микрофона)...",
                     id="text-input",
@@ -134,6 +150,53 @@ class GogiApp(App):
         self.sub_title = self._status_line()
         self._populate_voices()
         self._populate_models()
+        self._wire_events()
+
+    # --- события ядра -> виджеты (колбэки прилетают из воркер-потока) -------
+
+    def _wire_events(self) -> None:
+        a = self.assistant
+        a.on(Event.STATE_CHANGED, lambda old, new: self.call_from_thread(self._on_state, new))
+        a.on(Event.LLM_TOKEN, lambda token: self.call_from_thread(self._on_token, token))
+        a.on(Event.LLM_DONE, lambda text: self.call_from_thread(self._on_reply_done, text))
+        a.on(Event.STT_DONE, lambda text: self.call_from_thread(self._on_stt_done, text))
+        a.on(
+            Event.TOOL_STARTED,
+            lambda name, args: self.call_from_thread(
+                self._write_log, f"[dim]→ {name}({args})[/dim]"
+            ),
+        )
+        a.on(
+            Event.TOOL_DONE,
+            lambda name, result: self.call_from_thread(
+                self._write_log, f"[dim]← {result}[/dim]"
+            ),
+        )
+        a.on(
+            Event.ERROR,
+            lambda message: self.call_from_thread(self._write_log, f"[red]{message}[/red]"),
+        )
+
+    def _on_state(self, new: State) -> None:
+        self.sub_title = f"{_STATE_LABEL.get(new, new.value)} · {self._status_line()}"
+
+    def _on_token(self, token: str) -> None:
+        self._reply_buf += token
+        self.query_one("#streaming", Static).update(f"Гоги: {self._reply_buf}")
+
+    def _on_reply_done(self, text: str) -> None:
+        self.query_one("#streaming", Static).update("")
+        self._reply_buf = ""
+        self._write_log(f"[bold $warning]Гоги:[/bold $warning] {text or '(нет ответа)'}")
+
+    def _on_stt_done(self, text: str) -> None:
+        if text:
+            self._write_log(f"[bold]Вы:[/bold] {text}")
+        else:
+            self._write_log("[dim](не расслышал)[/dim]")
+
+    def _write_log(self, markup: str) -> None:
+        self.query_one("#transcript", RichLog).write(markup)
 
     def _on_load_error(self, message: str) -> None:
         self.query_one("#transcript", RichLog).write(f"[red]Ошибка загрузки: {message}[/red]")
@@ -143,32 +206,20 @@ class GogiApp(App):
     def action_toggle_recording(self) -> None:
         if self.assistant is None:
             return
-        log = self.query_one("#transcript", RichLog)
         if not self.recording:
             self.recording = True
-            self.assistant.tts.interrupt()  # barge-in
+            self.assistant.interrupt()  # barge-in + state -> LISTENING
             self.assistant.stt.start_recording()
-            log.write("[i]Слушаю... нажми R ещё раз, чтобы остановить.[/i]")
         else:
             self.recording = False
-            log.write("[i]Распознаю и думаю...[/i]")
             self.run_worker(self._respond_to_recording, thread=True)
 
     def _respond_to_recording(self) -> None:
         audio = self.assistant.stt.stop_recording()
-        text = self.assistant.transcribe(audio)
+        text = self.assistant.transcribe(audio)  # STT_DONE -> _on_stt_done рисует строку
         if not text:
-            self.call_from_thread(
-                lambda: self.query_one("#transcript", RichLog).write("[dim](не расслышал)[/dim]")
-            )
             return
-        reply = self.assistant.respond(text)
-        self.call_from_thread(self._append_exchange, text, reply)
-
-    def _append_exchange(self, user_text: str, reply: str) -> None:
-        log = self.query_one("#transcript", RichLog)
-        log.write(f"[bold]Вы:[/bold] {user_text}")
-        log.write(f"[bold $warning]Гоги:[/bold $warning] {reply or '(нет ответа)'}")
+        self.assistant.respond(text)  # LLM_TOKEN/LLM_DONE рисуют ответ
 
     def on_input_submitted(self, event: Input.Submitted) -> None:
         if event.input.id != "text-input" or self.assistant is None:
@@ -177,16 +228,8 @@ class GogiApp(App):
         if not text:
             return
         event.input.value = ""
-        self.query_one("#transcript", RichLog).write(f"[bold]Вы:[/bold] {text}")
-        self.run_worker(lambda: self._respond_to_text(text), thread=True)
-
-    def _respond_to_text(self, text: str) -> None:
-        reply = self.assistant.respond(text)
-        self.call_from_thread(
-            lambda: self.query_one("#transcript", RichLog).write(
-                f"[bold $warning]Гоги:[/bold $warning] {reply or '(нет ответа)'}"
-            )
-        )
+        self._write_log(f"[bold]Вы:[/bold] {text}")
+        self.run_worker(lambda: self.assistant.respond(text), thread=True)
 
     # --- команды: приложения -----------------------------------------------------
 
